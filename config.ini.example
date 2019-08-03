@@ -8,3 +8,5 @@ reportToTelegram=no
 telegramBotKey=0123456789:qwertyuiopasdfghjklzxcvbnm
 telegramBotChat=0123456789
 locationName=Home
+reportToTelegram_WithOutboundIPv4=yes
+reportToTelegram_WithOutboundIPv6=yes
