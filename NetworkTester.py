@@ -5,6 +5,7 @@ import urllib
 from urllib import parse
 import sys
 import configparser
+import requests
 
 runPath = sys.path[0] + "/"
 logFile = runPath + "network.log"
@@ -35,6 +36,8 @@ print("reportToTelegram: " + str(reportToTelegram))
 telegramBotKey = readConfig("report","telegramBotKey")
 telegramBotChat = readConfig("report","telegramBotChat")
 locationName = readConfig("report","locationName")
+reportToTelegram_WithOutboundIPv4 = readConfig("report","reportToTelegram_WithOutboundIPv4")
+reportToTelegram_WithOutboundIPv6 = readConfig("report","reportToTelegram_WithOutboundIPv6")
 
 def getNowTime():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -57,7 +60,7 @@ def isNetworkAvailable():
         return True
     else:
         return False
-        
+
 def playAudio(command):
     if playAudio:
         logToFile("Play audio (" + command + ")")
@@ -66,7 +69,7 @@ def playAudio(command):
             logToFile("Play audio (" + command + ") failed!")
         else:
             logToFile("Play audio (" + command + ") complete")
-        
+
 def errorMessageReport(body):
     if reportToTelegram:
         logToStd("Report error information to Telegram")
@@ -77,7 +80,22 @@ def errorMessageReport(body):
         botKey = telegramBotKey
         toChat   = telegramBotChat
         subject  = locationName + " 检测到网络连接中断"
-        message = subject + "\n\n" + body + "\n\nZZNetworkTester @ " + locationName
+        message_ip = "\n"
+        if reportToTelegram_WithOutboundIPv4:
+            try:
+                v4ip = requests.get(url="https://api-ipv4.ip.sb/ip")
+                if v4ip.status_code == 200:
+                    message_ip = message_ip + "\n公网IPv4地址:" + v4ip.text
+            except:
+               message_ip = message_ip + "\n公网IPv4地址:获取失败\n"
+        if reportToTelegram_WithOutboundIPv6:
+            try:
+                v6ip = requests.get(url="https://api-ipv6.ip.sb/ip")
+                if v6ip.status_code == 200:
+                    message_ip = message_ip + "\n公网IPv6地址:" + v6ip.text
+            except:
+                    message_ip = message_ip + "\n公网IPv6地址:获取失败\n"
+        message = subject + "\n\n" + body + message_ip + "\nZZNetworkTester @ " + locationName
         link = "https://telegramapi.asec01.net/bot" + botKey + "/sendmessage?text=" + urllib.parse.quote(message) + "&chat_id=" + toChat
         command = "curl \"" + link+"\""
         reportErrMsgReturn = os.system(command + " > /dev/null 2>&1")
